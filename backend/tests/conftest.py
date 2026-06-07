@@ -1,19 +1,43 @@
 import asyncio
 from typing import AsyncGenerator, Generator
 import pytest
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from app.core.config import settings
 from app.models.base import Base
-from app.main import app
 
-# Create a test database engine (normally this points to a separate test DB)
-# For local testing, we can append '_test' to the DB name or use a nested transaction.
+# Derive the test database URL from settings
 TEST_DATABASE_URL = settings.async_database_url.replace(
     settings.POSTGRES_DB, f"{settings.POSTGRES_DB}_test"
 )
 
-# For safety, let's default to the standard URL if not configured, 
-# but run all tests inside a transaction that rolls back.
+# Template/default database URL to perform admin commands like CREATE DATABASE
+ADMIN_DATABASE_URL = settings.async_database_url.replace(
+    settings.POSTGRES_DB, "postgres"
+)
+
+async def create_test_db_if_not_exists():
+    """
+    Connects to the default 'postgres' database and creates the test database if it doesn't exist.
+    """
+    # Create engine for admin commands (isolation_level="AUTOCOMMIT" is required for CREATE DATABASE)
+    engine = create_async_engine(ADMIN_DATABASE_URL, isolation_level="AUTOCOMMIT")
+    test_db_name = f"{settings.POSTGRES_DB}_test"
+    
+    async with engine.connect() as conn:
+        # Check if database exists
+        result = await conn.execute(
+            text("SELECT 1 FROM pg_database WHERE datname = :dbname"),
+            {"dbname": test_db_name}
+        )
+        exists = result.scalar()
+        
+        if not exists:
+            print(f"Creating test database: {test_db_name}")
+            await conn.execute(text(f"CREATE DATABASE {test_db_name}"))
+            
+    await engine.dispose()
+
 @pytest.fixture(scope="session")
 def anyio_backend() -> str:
     return "asyncio"
@@ -27,16 +51,19 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
 
 @pytest.fixture(scope="session")
 async def db_engine():
-    # Use standard async engine
-    engine = create_async_engine(settings.async_database_url, echo=False)
+    # 1. Ensure the test database exists
+    await create_test_db_if_not_exists()
     
-    # Create tables in the database if they don't exist
+    # 2. Connect to the test database
+    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+    
+    # 3. Create all tables in the test database
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         
     yield engine
     
-    # Clean up tables after testing
+    # 4. Clean up tables in the test database after testing
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         

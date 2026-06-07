@@ -46,6 +46,12 @@ class Settings(BaseSettings):
     # Logging Configuration
     LOG_LEVEL: str = Field(default="INFO")
 
+    # Security & JWT Configurations
+    SECRET_KEY: str = Field(default="super_secret_cryptographic_key_change_me_in_production_32_bytes_length")
+    ALGORITHM: str = Field(default="HS256")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30)
+    REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7)
+
     # Settings configurations
     model_config = SettingsConfigDict(
         env_file=str(ENV_FILE_PATH) if ENV_FILE_PATH.exists() else None,
