@@ -56,9 +56,16 @@ class Settings(BaseSettings):
     @property
     def database_url(self) -> str:
         """
-        Dynamically constructs the SQLAlchemy PostgreSQL connection URI.
+        Dynamically constructs the synchronous SQLAlchemy PostgreSQL connection URI (for Alembic).
         """
         return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+
+    @property
+    def async_database_url(self) -> str:
+        """
+        Dynamically constructs the asynchronous SQLAlchemy PostgreSQL connection URI (for FastAPI).
+        """
+        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
 # Global settings instance
 settings = Settings()
