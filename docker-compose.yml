@@ -1,0 +1,27 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: bank_rag_backend:local
+    container_name: bank_rag_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount the local application code to allow real-time code changes (hot-reloading)
+      - ./backend/app:/app/app
+      # Mount the log folder so logs are visible on the host machine
+      - ./backend/logs:/app/logs
+    env_file:
+      - .env
+    environment:
+      # Override host endpoints to reference internal Docker services later
+      - POSTGRES_HOST=postgres
+      - CHROMA_HOST=chromadb
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
