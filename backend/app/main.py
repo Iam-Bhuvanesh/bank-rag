@@ -7,6 +7,9 @@ from app.core.config import settings
 from app.core.logging_config import setup_logging
 from app.database.session import get_db
 from app.api.v1.auth import router as auth_router
+from app.api.v1.documents import router as documents_router
+from app.api.v1.pdf_processing import router as pdf_processing_router
+from app.api.v1.ocr import router as ocr_router
 
 # Initialize centralized logging configuration
 setup_logging(settings.LOG_LEVEL)
@@ -103,3 +106,6 @@ async def db_health_check(db: AsyncSession = Depends(get_db)):
 # Versioning Structure Integration
 # Include Authentication and User Management routes under API version prefix
 app.include_router(auth_router, prefix=settings.API_V1_STR)
+app.include_router(documents_router, prefix=settings.API_V1_STR)
+app.include_router(pdf_processing_router, prefix=settings.API_V1_STR)
+app.include_router(ocr_router, prefix=settings.API_V1_STR)

@@ -52,6 +52,25 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30)
     REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7)
 
+    # Document Upload & Storage Settings
+    UPLOAD_DIR: str = Field(default="data/uploads")
+    PROCESSED_DIR: str = Field(default="data/processed")
+    OCR_DIR: str = Field(default="data/processed/ocr")
+    MAX_FILE_SIZE: int = Field(default=20971520)  # Default 20MB in bytes
+    ALLOWED_FILE_TYPES: str = Field(default="pdf,csv,xlsx,png,jpg,jpeg")
+
+    # OCR Engine Settings
+    OCR_LANGUAGE: str = Field(default="en")
+    OCR_DPI: int = Field(default=300)
+    TESSERACT_CMD: str = Field(default="")
+
+    @property
+    def allowed_extensions(self) -> list[str]:
+        """
+        Parses ALLOWED_FILE_TYPES string to a list of allowed extensions.
+        """
+        return [ext.strip().lower() for ext in self.ALLOWED_FILE_TYPES.split(",")]
+
     # Settings configurations
     model_config = SettingsConfigDict(
         env_file=str(ENV_FILE_PATH) if ENV_FILE_PATH.exists() else None,

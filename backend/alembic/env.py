@@ -14,6 +14,7 @@ backend_path = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(backend_path))
 
 from app.core.config import settings
+import app.models  # noqa: F401 - imports mapped models for Alembic metadata
 from app.models.base import Base
 
 # this is the Alembic Config object, which provides
